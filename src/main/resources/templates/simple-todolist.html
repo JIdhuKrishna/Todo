@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Todo List</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .container { max-width: 800px; margin-top: 50px; }
+        .card { border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .card-header { background: linear-gradient(45deg, #667eea, #764ba2); color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="card-header text-center">
+                <h1>Interactive Todo List</h1>
+            </div>
+            <div class="card-body">
+                <!-- Add Task Form -->
+                <div class="mb-4">
+                    <h4>Add New Task</h4>
+                    <form action="/add" method="post">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <input type="text" class="form-control" name="title" placeholder="Enter task title..." required>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-primary w-100">Add Task</button>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <textarea class="form-control" name="description" rows="2" placeholder="Task description (optional)"></textarea>
+                        </div>
+                        <div class="mt-2">
+                            <select class="form-select" name="priority">
+                                <option value="LOW">Low Priority</option>
+                                <option value="MEDIUM" selected>Medium Priority</option>
+                                <option value="HIGH">High Priority</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Statistics -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="bg-primary text-white p-3 rounded text-center">
+                            <h3 th:text="${totalCount ?: 0}">0</h3>
+                            <p class="mb-0">Total</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="bg-warning text-dark p-3 rounded text-center">
+                            <h3 th:text="${pendingCount ?: 0}">0</h3>
+                            <p class="mb-0">Pending</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="bg-success text-white p-3 rounded text-center">
+                            <h3 th:text="${completedCount ?: 0}">0</h3>
+                            <p class="mb-0">Completed</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Task List -->
+                <div>
+                    <h4>Your Tasks</h4>
+                    <div th:if="${todos == null or #lists.isEmpty(todos)}" class="text-center py-4">
+                        <p class="text-muted">No tasks yet! Add one above.</p>
+                    </div>
+                    
+                    <div th:each="todo : ${todos}" class="border p-3 mb-2 rounded">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <form th:action="'/toggle/' + ${todo.id}" method="post" style="display: inline;">
+                                    <input type="checkbox" th:checked="${todo.completed}" onchange="this.form.submit()">
+                                </form>
+                                <span th:text="${todo.title}" th:class="${todo.completed} ? 'text-decoration-line-through' : ''">Task Title</span>
+                                <small class="text-muted" th:if="${todo.description}" th:text="' - ' + ${todo.description}"></small>
+                                <span class="badge bg-secondary ms-2" th:text="${todo.priority}">Priority</span>
+                            </div>
+                            <form th:action="'/delete/' + ${todo.id}" method="post" style="display: inline;" 
+                                  onsubmit="return confirm('Delete this task?')">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

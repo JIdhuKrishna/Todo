@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Todo List</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .todo-container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .card {
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: none;
+            border-radius: 15px;
+        }
+        .card-header {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 1.5rem;
+        }
+        .stats-card {
+            background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        .todo-item {
+            border-left: 4px solid;
+            margin-bottom: 0.5rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 0 8px 8px 0;
+            transition: all 0.3s ease;
+        }
+        .todo-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .todo-item.completed {
+            opacity: 0.7;
+            background: #e9ecef;
+        }
+        .todo-item.completed .todo-text {
+            text-decoration: line-through;
+        }
+        .priority-HIGH { border-left-color: #dc3545; }
+        .priority-MEDIUM { border-left-color: #ffc107; }
+        .priority-LOW { border-left-color: #28a745; }
+        .btn-priority {
+            border-radius: 20px;
+            font-size: 0.8rem;
+            padding: 0.2rem 0.8rem;
+        }
+        .add-task-form {
+            background: linear-gradient(45deg, #e3f2fd, #f3e5f5);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .todo-checkbox {
+            transform: scale(1.2);
+            margin-right: 0.5rem;
+        }
+        .todo-actions {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .todo-item:hover .todo-actions {
+            opacity: 1;
+        }
+        .alert {
+            border-radius: 10px;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="todo-container">
+        <!-- Success/Error Messages -->
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            <span th:text="${success}">Success message</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <span th:text="${error}">Error message</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <!-- Add New Task Form -->
+        <div class="add-task-form">
+            <h4 class="mb-3"><i class="fas fa-plus-circle me-2"></i>Add New Task</h4>
+            <form th:action="@{/add}" method="post" th:object="${newTodo}">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Task Title *</label>
+                            <input type="text" class="form-control" id="title" th:field="*{title}" 
+                                   placeholder="Enter task title..." required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="priority" class="form-label">Priority</label>
+                            <select class="form-select" id="priority" th:field="*{priority}">
+                                <option value="LOW">Low</option>
+                                <option value="MEDIUM" selected>Medium</option>
+                                <option value="HIGH">High</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="mb-3">
+                            <label class="form-label d-block">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-plus me-1"></i>Add Task
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="mb-0">
+                            <label for="description" class="form-label">Description (Optional)</label>
+                            <textarea class="form-control" id="description" th:field="*{description}" 
+                                      rows="2" placeholder="Enter task description..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-header text-center">
+                <h1><i class="fas fa-tasks me-2"></i>My Todo List</h1>
+                <p class="mb-0">Stay organized and productive</p>
+            </div>
+            <div class="card-body">
+                <!-- Statistics -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="stats-card">
+                            <h3 th:text="${totalCount}">0</h3>
+                            <p class="mb-0">Total Tasks</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stats-card">
+                            <h3 th:text="${pendingCount}">0</h3>
+                            <p class="mb-0">Pending</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stats-card">
+                            <h3 th:text="${completedCount}">0</h3>
+                            <p class="mb-0">Completed</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Task List -->
+                <div class="task-list">
+                    <!-- Empty State -->
+                    <div th:if="${todos == null or #lists.isEmpty(todos)}" class="text-center py-5">
+                        <i class="fas fa-clipboard-list fa-5x text-muted mb-3"></i>
+                        <h4 class="text-muted">No tasks yet!</h4>
+                        <p class="text-muted">Add your first task using the form above.</p>
+                    </div>
+                    
+                    <!-- Todo Items -->
+                    <div th:if="${todos != null and not #lists.isEmpty(todos)}">
+                        <div th:each="todo : ${todos}" 
+                             class="todo-item"
+                             th:classappend="'priority-' + ${todo.priority}">
+                            <div th:classappend="${todo.completed} ? 'completed' : ''">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-start">
+                                            <!-- Toggle Checkbox -->
+                                            <form th:action="@{/toggle/{id}(id=${todo.id})}" method="post" class="me-3">
+                                                <input type="checkbox" class="form-check-input todo-checkbox" 
+                                                       th:checked="${todo.completed}"
+                                                       onchange="this.form.submit()">
+                                            </form>
+                                            
+                                            <div class="todo-content">
+                                                <h6 class="mb-1 todo-text" th:text="${todo.title}">Task Title</h6>
+                                                <p class="mb-2 text-muted todo-text" 
+                                                   th:if="${todo.description != null and not #strings.isEmpty(todo.description)}" 
+                                                   th:text="${todo.description}">Task Description</p>
+                                                <div class="d-flex align-items-center">
+                                                    <span class="badge btn-priority me-2 bg-primary"
+                                                          th:text="${todo.priority}">PRIORITY</span>
+                                                    <small class="text-muted" th:if="${todo.createdAt != null}">
+                                                        Created: <span th:text="${#temporals.format(todo.createdAt, 'MMM dd, yyyy HH:mm')}">Date</span>
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Actions -->
+                                    <div class="todo-actions">
+                                        <form th:action="@{/delete/{id}(id=${todo.id})}" method="post" class="d-inline"
+                                              onsubmit="return confirm('Are you sure you want to delete this task?')">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
